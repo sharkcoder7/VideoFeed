@@ -10,13 +10,14 @@ import UIKit
 import AVFoundation
 import AVKit
 
+
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource{
 
     @IBOutlet weak var tableView: UITableView!
     
     // variables
     var urls : NSMutableArray = []
-    var visibleIndex:Int = 0
+    //var visibleIndex:Int = 0
     var videoHeight:Float = 0.0
     
     var cache: NSMutableDictionary = [:]
@@ -25,12 +26,14 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         tableView.register(UINib(nibName: "VideoCellView", bundle: nil), forCellReuseIdentifier: "VideoCell")
-        
+        let gapTableViewHeader = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        tableView.tableHeaderView = gapTableViewHeader
+            
         // init constants
 
         // init variables
         cache = [:]
-        visibleIndex = 0
+
         
         // init URLs
         urls = ["https://vziptvapi.azurewebsites.net/assets/stream/output/VZ_Kevin_Hart.mp4.m3u8",
@@ -87,7 +90,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1), execute: {
             self.tableView.reloadData()
+            Notificator.fireNotification(named: kUpdateVideoCell)
         })
+        
+        
     }
 
     override func didReceiveMemoryWarning() {
@@ -114,85 +120,75 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             newCell = cell as! VideoTableViewCell
         }
         
+        newCell.listenForPlayerChanges()
+        newCell.indexPath = indexPath
+        
+        
         // get url
-        let url = NSURL(string: urls[indexPath.row] as! String)
-               
-        let avLayer = cache.object(forKey: String(indexPath.row))
-        let newLayer: AVPlayerLayer
-        if avLayer == nil {
-            let videoPlayer = AVPlayer(url: url as! URL)
-            let avLayer = AVPlayerLayer(player: videoPlayer)
-			
-            cache.setObject(avLayer, forKey: String(indexPath.row) as NSCopying)
-            newLayer = avLayer
-        } else{
-            newLayer = avLayer as! AVPlayerLayer
-        }
-        
-        // refresh layer
-        DispatchQueue.global(qos: .background).async {
-            DispatchQueue.main.sync {
-                // Causing some flicker due to old layer being removed and new layer being added
-                // TODO : perform video load in this
+        if let url = URL(string: urls[indexPath.row] as! String){
+            let avLayer = cache.object(forKey: String(indexPath.row))
+            let newLayer: AVPlayerLayer
+            if avLayer == nil {
+                let videoPlayer = AVPlayer(url: url)
+                let avLayer = AVPlayerLayer(player: videoPlayer)
+                
+                cache.setObject(avLayer, forKey: String(indexPath.row) as NSCopying)
+                newLayer = avLayer
+            } else{
+                newLayer = avLayer as! AVPlayerLayer
             }
+
+            newCell.PlayerView.layer.sublayers = nil;
+            newLayer.frame = newCell.PlayerView.bounds
+            newCell.PlayerView.layer.addSublayer(newLayer)
+            newCell.avLayer = newLayer
+            newCell.avPlayer = newCell.avLayer.player!
+            newCell.avPlayer.pause()
+            newCell.makePlayerLoop()
+            
+            newCell.avPlayer.isMuted = false
+            newCell.selectionStyle = UITableViewCellSelectionStyle.none
         }
+               
         
-        newCell.PlayerView.layer.sublayers=nil;
-        newLayer.frame = newCell.PlayerView.bounds
-        newCell.PlayerView.layer.addSublayer(newLayer)
-        newCell.avLayer = newLayer
-        newCell.avPlayer = newCell.avLayer.player!
-        newCell.avPlayer.pause()
-        
-        if(visibleIndex == indexPath.row){
-            NSLog("Playing video at index : %ld", visibleIndex);
-            newCell.avPlayer.play()
-            loopVideo(videoPlayer: newCell.avPlayer)
-        }
-        newCell.selectionStyle = UITableViewCellSelectionStyle.none
-        newCell.tag = indexPath.row
         
         return newCell;
         
     }
     
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-            visibleIndex = -1;
+        Notificator.fireNotification(named: kUpdateVideoCell)
     }
     
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        resetVisibleIndex()
+         resetVisibleIndex()
     }
     
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        if(!decelerate){
-            resetVisibleIndex()
-        }
+        resetVisibleIndex()
     }
     
-    func resetVisibleIndex() {
-        var found = false
-        for cell in tableView.visibleCells {
-            let vCell = cell as! VideoTableViewCell
-            let ccellRect = view.window?.convert(vCell.bounds, from: vCell)
-            let p = ccellRect?.origin
-            vCell.avPlayer.pause()
-			
-            if (!found && Float((p?.y)!) > (Float(tableView.frame.size.height)-300.0)/2) {
-                NSLog("Visible video at index : %ld",vCell.tag)
-                visibleIndex = Int(cell.tag)
-                found = true
-            }
-            
+    func updateCurrentIndex() -> IndexPath? {
+        //when scroll end get the current display off set
+        let visibleStartPoint = self.tableView.contentOffset
+        //calculate the center point in view
+        let selectionPoint = CGPoint(x:self.tableView.frame.width/2,y: visibleStartPoint.y + self.tableView.frame.height/2)
+        //get the index path in center position
+        let pt = CGPoint(x:selectionPoint.x,y: selectionPoint.y)
+        if let indexPath = self.tableView.indexPathForRow(at:pt){
+            return indexPath
         }
-        tableView.reloadData()
+        return nil
     }
     
-    func loopVideo(videoPlayer: AVPlayer) {
-        NotificationCenter.default.addObserver(forName: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: videoPlayer.currentItem, queue: nil) { notification in
-            videoPlayer.seek(to: kCMTimeZero)
-            videoPlayer.pause()
+    func resetVisibleIndex(){
+        if let idx = updateCurrentIndex(){
+            currentlyPlayingIndex = idx
+            Notificator.fireNotification(named: kUpdateVideoCell)
         }
     }
+
+    
+ 
 }
 
