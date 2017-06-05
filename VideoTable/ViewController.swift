@@ -15,23 +15,44 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
 
     @IBOutlet weak var tableView: UITableView!
     
-    // variables
     var urls : NSMutableArray = []
-    //var visibleIndex:Int = 0
     var videoHeight:Float = 0.0
     
     var cache: NSMutableDictionary = [:]
     
+    func addObservers(){
+        NotificationCenter.default.addObserver(forName: kPlayNext, object:nil, queue: nil) { notification in
+
+           
+            let nextRow = currentlyPlayingIndex.row + 1
+            let nextRowIndexPath = IndexPath(row:nextRow,section:currentlyPlayingIndex.section)
+            print("Should Auto play next video >>> ",nextRowIndexPath)
+            let totalRows = self.tableView.numberOfRows(inSection: currentlyPlayingIndex.section)
+            if (totalRows > nextRow){
+               self.tableView.scrollToRow(at: nextRowIndexPath, at: .middle, animated: true)
+               self.perform(#selector(self.delayedRefresh), with: nil, afterDelay: 0.3)
+            }else{
+                print("fail")
+            }
+            
+        }
+    }
+    func delayedRefresh(){
+        self.resetVisibleIndex()
+    }
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        self.addObservers()
+        
         // Do any additional setup after loading the view, typically from a nib.
         tableView.register(UINib(nibName: "VideoCellView", bundle: nil), forCellReuseIdentifier: "VideoCell")
+        
+        // offset tableview so first row is selected
         let gapTableViewHeader = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
         tableView.tableHeaderView = gapTableViewHeader
             
-        // init constants
 
-        // init variables
         cache = [:]
 
         
@@ -138,11 +159,11 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 newLayer = avLayer as! AVPlayerLayer
             }
 
-            newCell.PlayerView.layer.sublayers = nil;
-            newLayer.frame = newCell.PlayerView.bounds
-            newCell.PlayerView.layer.addSublayer(newLayer)
-            newCell.avLayer = newLayer
-            newCell.avPlayer = newCell.avLayer.player!
+            newCell.playerView.configureLayer(playerLayer: newLayer)
+
+            newCell.avPlayer = (newCell.playerView.playerLayer?.player)!
+            
+            
             newCell.avPlayer.pause()
             newCell.makePlayerLoop()
             

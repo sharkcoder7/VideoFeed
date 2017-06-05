@@ -12,6 +12,8 @@ import AVKit
 
 
 let kUpdateVideoCell = NSNotification.Name("kUpdateVideoCell")
+let kPlayNext = NSNotification.Name("kPlayNext")
+
 class Notificator {
     static func fireNotification(named: NSNotification.Name) {
         NotificationCenter.default.post(name: named, object: nil)
@@ -19,10 +21,16 @@ class Notificator {
 }
 
 
-
-
-
 var currentlyPlayingIndex:IndexPath = IndexPath(row:0,section:0)
+
+extension AVPlayer {
+    
+    func isPlaying() -> Bool {
+        
+        return (self.rate != 0.0 && self.status == .readyToPlay)
+    }
+}
+
 
 extension VideoTableViewCell{
     
@@ -31,25 +39,27 @@ extension VideoTableViewCell{
         NotificationCenter.default.addObserver(forName:kUpdateVideoCell, object: nil, queue: OperationQueue.main, using: { (note) in
             print("update cell")
             if(currentlyPlayingIndex == self.indexPath){
-                self.shouldFadeOutSound = true
+                self.isOrWasPlaying = true
                 print("Playing video at index :",  self.indexPath);
                 self.avPlayer.play()
-                self.backgroundColor = .black
-                self.contentView.backgroundColor = .black
+//                self.backgroundColor = .black
+//                self.contentView.backgroundColor = .black
                 self.avPlayer.volume = 1
     
             }else{
-                if(self.shouldFadeOutSound){
-                    self.shouldFadeOutSound = false
+                if(self.isOrWasPlaying){
+                    self.isOrWasPlaying = false
                     self.fadeOutSound()
                 }
                 self.avPlayer.pause()
-                self.backgroundColor = .yellow
-                self.contentView.backgroundColor = .yellow
+//                self.backgroundColor = .yellow
+//                self.contentView.backgroundColor = .yellow
             }
 
         })
     }
+    
+
     
     // TODO - doesn't seem to work
     func fadeInSound() {
@@ -72,12 +82,12 @@ class VideoTableViewCell: UITableViewCell {
 
     @IBOutlet weak var UserImageView: UIImageView!
     @IBOutlet weak var AuthorButton: UIButton!
-    @IBOutlet weak var PlayerView: UIView!
+    @IBOutlet weak var playerView: LayoutPlayerView!
     
-    var shouldFadeOutSound = false
+    var isOrWasPlaying = false
     
     var indexPath:IndexPath = IndexPath(row:0,section:0)
-    var avLayer: AVPlayerLayer = AVPlayerLayer.init()
+
     var avPlayer: AVPlayer = AVPlayer.init()
     
     override func awakeFromNib() {
@@ -92,10 +102,14 @@ class VideoTableViewCell: UITableViewCell {
     }
     
     func makePlayerLoop(){
-        
-        NotificationCenter.default.addObserver(forName: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: self.avPlayer, queue: nil) { notification in
-            self.avPlayer.seek(to: kCMTimeZero)
-            self.avPlayer.pause()
+        NotificationCenter.default.removeObserver(NSNotification.Name.AVPlayerItemDidPlayToEndTime)
+        NotificationCenter.default.addObserver(forName: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: nil, queue: nil) { notification in
+            if(self.avPlayer.isPlaying() || self.isOrWasPlaying){
+                self.isOrWasPlaying = false
+                self.avPlayer.seek(to: kCMTimeZero)
+                self.avPlayer.pause()
+                Notificator.fireNotification(named: kPlayNext)
+            }
         }
         
     }
