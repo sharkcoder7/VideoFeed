@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		17C660961EE5E111001E21E1 /* PlayerLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C660951EE5E111001E21E1 /* PlayerLayout.swift */; };
 		840424D51E8F0ABA00EA1E6B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 840424D31E8F0ABA00EA1E6B /* Main.storyboard */; };
 		84499C3E1E8D8D84007266FA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84499C3D1E8D8D84007266FA /* AppDelegate.swift */; };
 		84499C401E8D8D84007266FA /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84499C3F1E8D8D84007266FA /* ViewController.swift */; };
@@ -39,6 +40,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		17C660951EE5E111001E21E1 /* PlayerLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PlayerLayout.swift; sourceTree = "<group>"; };
 		840424D41E8F0ABA00EA1E6B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		84499C3A1E8D8D84007266FA /* VideoTable.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VideoTable.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		84499C3D1E8D8D84007266FA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -119,6 +121,7 @@
 				84499C491E8D8D84007266FA /* Info.plist */,
 				84499C721E8D8FDA007266FA /* VideoTableViewCell.swift */,
 				84499C741E8D8FF6007266FA /* VideoCellView.xib */,
+				17C660951EE5E111001E21E1 /* PlayerLayout.swift */,
 			);
 			path = VideoTable;
 			sourceTree = "<group>";
@@ -286,6 +289,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				17C660961EE5E111001E21E1 /* PlayerLayout.swift in Sources */,
 				84499C401E8D8D84007266FA /* ViewController.swift in Sources */,
 				84499C3E1E8D8D84007266FA /* AppDelegate.swift in Sources */,
 				84499C731E8D8FDA007266FA /* VideoTableViewCell.swift in Sources */,
